@@ -5,7 +5,14 @@
 
 .mascot img{display:none}.mascot{transform:none;mix-blend-mode:normal;overflow:visible;display:grid;place-items:center}.mascot-sprite{width:min(85%,375px);aspect-ratio:1;background-image:url("assets/mascot-wave-sheet.png");background-size:300% 200%;background-position:0% 0%;background-repeat:no-repeat}
 
-#piloto p,#padrinazgo p{max-width:68ch;font-size:1.125rem;line-height:1.6}#contacto .actions{justify-content:center}.actions{flex-wrap:wrap}</style></head><body>
+#piloto p,#padrinazgo p{max-width:68ch;font-size:1.125rem;line-height:1.6}#contacto .actions{justify-content:center}.actions{flex-wrap:wrap}
+/* Reveal content in both scroll directions without changing the layout. */
+.scroll-fade{opacity:0;translate:0 14px;transition:opacity 550ms ease,translate 550ms cubic-bezier(.22,1,.36,1);transition-delay:0ms}
+.scroll-fade.is-visible{opacity:1;translate:0 0;transition-delay:var(--reveal-delay,0ms)}
+.scroll-fade:focus-within{opacity:1;translate:0 0;transition-delay:0ms}
+@media(prefers-reduced-motion:reduce){.scroll-fade{opacity:1;translate:none;transition:none!important}}
+@media print{.scroll-fade{opacity:1;translate:none}}
+</style></head><body>
 <a class="skip" href="#principal">Saltar al contenido</a><header><a class="wordmark" href="#" aria-label="Literalymente, inicio">literal<i>y</i><em>mente</em></a><button class="menu" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav">☰</button><nav id="nav"><a href="#propuesta">Nuestra propuesta</a><a href="#nosotras">Quiénes somos</a><a href="#piloto">Piloto 2027</a><a href="#padrinazgo">Padrinazgo</a><a href="#contacto" class="button">Conversemos <span>↗</span></a></nav></header>
 <main id="principal"><section class="hero"><div><div class="eyebrow"><span class="dot"></span> Aprender abre posibilidades</div><h1>Educación que<br>rompe <span>barreras.</span> <br>Evaluar es el primer paso</h1><p class="intro">¿Qué habilidades domina cada estudiante y en cuáles necesita más apoyo? En Literalymente acercamos a las escuelas una evaluación digital de lectura, escritura, matemática y habilidades para aprender. Los resultados ayudan a los docentes a decidir qué trabajar con todo el curso y a quién acompañar más de cerca.</p><div class="actions"><a class="button" href="#propuesta">Ver cómo funciona</a><a class="button light" href="#piloto">Consultar por el piloto</a></div><div class="note"><b>✳</b> Una mirada inclusiva. Un futuro con más oportunidades.</div></div><div class="art"><div class="blob"></div><div class="spark" aria-hidden="true">✳</div><div class="mascot"><div class="mascot-sprite" role="img" aria-label="La mascota de Literalymente: un cerebro leyendo que levanta la mano para saludar"></div></div><div class="tag one"><span>✦</span> Todas las mentes cuentan</div><div class="tag two"><span>♡</span> Aprender, a tu manera.</div><div class="scribble" aria-hidden="true">⤻</div></div></section>
 <div class="strip"><span><b>✳</b> Educación inclusiva</span><span><b>✳</b> Tecnología con propósito</span><span><b>✳</b> Oportunidades para todos</span></div>
@@ -61,4 +68,36 @@ window.addEventListener('scroll',()=>{
   mascotAnimation=mascot.animate(positions.map(backgroundPosition=>({backgroundPosition,easing:'steps(1,end)'})),{duration:1800});
 },{passive:true});
 reducedMotion.addEventListener('change',()=>{if(reducedMotion.matches){mascotAnimation?.cancel();}});
+
+// Animate meaningful content groups, avoiding nested opacity and hidden navigation.
+const fadeTargets=[...document.querySelectorAll([
+  'header > .wordmark','header > nav',
+  '.hero > div:first-child > *','.hero > .art','.strip > span',
+  'main .section > .eyebrow','main .section > h2','main .section > p',
+  'main .section > .actions','main .section > a.button',
+  '.section-title > *','.cards > .card',
+  '.mission > .visual','.mission > div:not(.visual) > *',
+  'footer > *'
+].join(','))];
+fadeTargets.forEach(el=>{
+  const siblings=Array.from(el.parentElement.children);
+  el.style.setProperty('--reveal-delay',Math.min(siblings.indexOf(el)*45,135)+'ms');
+});
+let fadeObserver;
+function configureFades(){
+  fadeObserver?.disconnect();
+  if(reducedMotion.matches||!('IntersectionObserver' in window)){
+    fadeTargets.forEach(el=>el.classList.remove('scroll-fade','is-visible'));
+    return;
+  }
+  fadeObserver=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+      const tall=entry.boundingClientRect.height>window.innerHeight*.8;
+      entry.target.classList.toggle('is-visible',entry.isIntersecting&&(tall||entry.intersectionRatio>=.12));
+    });
+  },{threshold:[0,.12],rootMargin:'0px'});
+  fadeTargets.forEach(el=>{el.classList.add('scroll-fade');fadeObserver.observe(el);});
+}
+configureFades();
+reducedMotion.addEventListener('change',configureFades);
 </script></body></html>
